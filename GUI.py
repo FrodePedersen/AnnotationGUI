@@ -59,8 +59,9 @@ class GUI():
                 self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
                 self.annotations[(indexStart, indexEnd)] = annotatedText
             else:
-                self.textField.tag_remove('ANNOTATE_SENSITIVE', indexStart, indexEnd)
+                self.textField.tag_remove('ANNOTATE_SENSITIVE', '1.0', tk.END)
                 del self.annotations[(indexStart, indexEnd)]
+                self.redrawAnnotations()
         except tk.TclError:
             print(f'No text selected')
 
@@ -117,6 +118,10 @@ class GUI():
         selColumnCorrected = round(selIndexCorrected * 10 ** lineEndDigitAmount)
 
         return selColumnCorrected, lineEndCeiling
+
+    def redrawAnnotations(self):
+        for k in self.annotations:
+            self.textField.tag_add('ANNOTATE_SENSITIVE', k[0], k[1])
 
     def bindKey(self, key):
         self.root.bind(key, self.annotateButtonAction)
