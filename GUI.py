@@ -48,12 +48,9 @@ class GUI():
 
         self.textField.config(state='disabled')
 
-    def annotateButtonAction(self):
-       # print(f'{self.textField.get(tk.SEL_FIRST, tk.SEL_LAST)}')
-        #print(f'First: {self.textField.index(tk.SEL_FIRST)}, Last: {self.textField.index(tk.SEL_LAST)}')
-
+    def annotateButtonAction(self, _event=None):
         indexStart, indexEnd = self.findSelection()
-        print(f'startcol - endcol {indexStart} - {indexEnd}')
+        #print(f'startcol - endcol {indexStart} - {indexEnd}')
         # tk.TclError exception is raised if not text is selected
         try:
             self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
@@ -113,4 +110,4 @@ class GUI():
         return selColumnCorrected, lineEndCeiling
 
     def bindKey(self, key):
-        pass
+        self.root.bind(key, self.annotateButtonAction)

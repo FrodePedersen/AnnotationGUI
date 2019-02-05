@@ -5,6 +5,7 @@ import decimal
 def main():
     gui = GUI.GUI((1200,720), (20,100))
     gui.setup()
+    gui.bindKey('s')
     gui.startGUI()
 
 
