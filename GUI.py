@@ -44,6 +44,7 @@ class GUI():
                                          "kladsk uioasdiuajk iopsadfjasdklf\n")
         self.textField.insert(tk.INSERT, "Line 2 asdajkhasd kjhsdf uyajk, kjlasdfkjh, kshadf.\n")
         self.textField.insert(tk.INSERT, "Line 3 asdafdjkldf +909kjsdf kljsdfjh, sdfkshadf.\n")
+        self.textField.insert(tk.INSERT, "Line 4 with 13\n")
 
         self.textField.config(state='disabled')
 
@@ -61,42 +62,33 @@ class GUI():
 
     #Ugly as Tkinter uses floats as indexing, e.g. third char in line 2 would be 2.3, while 24'th char would be 2.24
     def findSelection(self):
-        selStartCol = self.indexToColumn(self.textField.index(tk.SEL_FIRST))
-        selEndCol = self.indexToColumn(self.textField.index(tk.SEL_LAST))
+        selStartCol, _ = self.indexToColumn(self.textField.index(tk.SEL_FIRST))
+        selEndCol, endColumn = self.indexToColumn(self.textField.index(tk.SEL_LAST))
+        selEndCol -= 1
+        selStartLine = math.floor(decimal.Decimal(self.textField.index(f'{tk.SEL_FIRST} linestart')))
+        selEndLine = math.floor(decimal.Decimal(self.textField.index(f'{tk.SEL_LAST} lineend')))
 
-        '''
-        for i in range(selStartColumnCorrected, 0, -1):
-            char = self.columnToIndex(lineNumber, selStartColumnCorrected, lineEndDigitAmount)
-        # s = 0
-        #e = lineEnd - lineStart
-        '''
+        #The entire string from selStart's first char to last char of selEnd's line.
+        wholeString = self.textField.get(self.textField.index(f'{tk.SEL_FIRST} linestart'), self.textField.index(f'{tk.SEL_LAST} lineend'))
 
-        # print(f'lineStart {lineStart}, lineEnd {lineEnd}')
-        '''
-        #Find first char of selected words
-        for i in range(indexStart-1,0,-1):
-            char = self.textField.get(i,i)
-            if not (( char in string.punctuation ) or ( char in string.whitespace )):
-                s += 1
+        #Find beginning of word
+        for i in range(selStartCol, 0, -1):
+            if not ((wholeString[i-1] in string.punctuation ) or ( wholeString[i-1] in string.whitespace )):
+                selStartCol -= 1
             else:
                 break
 
-        #Find last char of selected words
-        for i in range(indexEnd+1, lineEnd):
-            char = self.textField.get(i,i)
-            if not (( char in string.punctuation ) or ( char in string.whitespace )):
-                e += 1
+        #Find end of word
+        for i in range(selEndCol, endColumn-1):
+            if not ((wholeString[i+1] in string.punctuation ) or ( wholeString[i+1] in string.whitespace )):
+                selEndCol += 1
             else:
                 break
 
-        '''
+        selStartCol = f'{selStartLine}.{selStartCol}'
+        selEndCol = f'{selEndLine}.{selEndCol+1}'
 
         return selStartCol, selEndCol
-
-    def columnToIndex(self, lineNumber, correctedCol, lineDigits):
-        index = 0.0
-
-        return index
 
     def indexToColumn(self, selIndex):
 
@@ -108,7 +100,7 @@ class GUI():
         # calculate line end:
         lineEndIndex = decimal.Decimal(self.textField.index(f'{selIndex} lineend'))
         lineEndDigitAmount = abs(decimal.Decimal(lineEndIndex).as_tuple().exponent)
-        #lineEndCeiling = round((lineEndIndex - lineNumber) * (10 ** lineEndDigitAmount))
+        lineEndCeiling = round((lineEndIndex - lineNumber) * (10 ** lineEndDigitAmount))
 
         # calculate selStartIndexCorrected
         selIndexDigitAmount = abs(decimal.Decimal(selIndex - lineNumber).as_tuple().exponent)
@@ -118,4 +110,4 @@ class GUI():
 
         selColumnCorrected = round(selIndexCorrected * 10 ** lineEndDigitAmount)
 
-        return selColumnCorrected
+        return selColumnCorrected, lineEndCeiling
