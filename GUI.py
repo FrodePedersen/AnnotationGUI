@@ -111,3 +111,6 @@ class GUI():
         selColumnCorrected = round(selIndexCorrected * 10 ** lineEndDigitAmount)
 
         return selColumnCorrected, lineEndCeiling
+
+    def bindKey(self, key):
+        pass
