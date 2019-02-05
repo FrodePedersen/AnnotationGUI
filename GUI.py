@@ -4,6 +4,7 @@ import math
 import tkinter as tk
 import tkinter.scrolledtext
 from tkinter.font import Font
+from tkinter import messagebox
 
 
 class GUI():
@@ -85,14 +86,18 @@ class GUI():
 
 
     def annotateButtonAction(self, _event=None):
+
+        if self.userMenuList.get() == '':
+            messagebox.showinfo('Invalid Action', 'Invalid User, please select a User')
+            return
+
         # tk.TclError exception is raised if not text is selected
         try:
             indexStart, indexEnd = self.findSelection()
             annotatedText = self.textField.get(indexStart, indexEnd)
-
             if (indexStart, indexEnd) not in self.annotations:
                 self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
-                self.annotations[(indexStart, indexEnd)] = ['sensitive', annotatedText]
+                self.annotations[(indexStart, indexEnd)] = ['sensitive', annotatedText, self.userMenuList.get()]
             else:
                 self.textField.tag_remove('ANNOTATE_SENSITIVE', '1.0', tk.END)
                 del self.annotations[(indexStart, indexEnd)]
@@ -163,7 +168,7 @@ class GUI():
         self.annotationTextField.config(state='normal')
         self.annotationTextField.delete('1.0', tk.END)
         for k, v in self.annotations.items():
-            self.annotationTextField.insert(tk.INSERT,(f'{v[0]}: {v[1]}\n')) #v[0] is the label, v[1] is the string
+            self.annotationTextField.insert(tk.INSERT,(f'{v[0]}: {v[1]}, User: {v[2]}\n')) #v[0] is the label, v[1] is the string
         self.annotationTextField.config(state='disabled')
 
     def saveAnnotationButtonAction(self, _event=None):
