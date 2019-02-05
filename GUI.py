@@ -34,6 +34,8 @@ class GUI():
         self.textField.pack()
         self.annotationButton.pack()
 
+        self.annotations = {}
+
 
     def startGUI(self):
         self.root.mainloop()
@@ -50,12 +52,19 @@ class GUI():
 
     def annotateButtonAction(self, _event=None):
         indexStart, indexEnd = self.findSelection()
-        #print(f'startcol - endcol {indexStart} - {indexEnd}')
+        annotatedText = self.textField.get(indexStart, indexEnd)
         # tk.TclError exception is raised if not text is selected
         try:
-            self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
+            if (indexStart, indexEnd) not in self.annotations:
+                self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
+                self.annotations[(indexStart, indexEnd)] = annotatedText
+            else:
+                self.textField.tag_remove('ANNOTATE_SENSITIVE', indexStart, indexEnd)
+                del self.annotations[(indexStart, indexEnd)]
         except tk.TclError:
             print(f'No text selected')
+
+        print(f'annotations: {self.annotations}')
 
     #Ugly as Tkinter uses floats as indexing, e.g. third char in line 2 would be 2.3, while 24'th char would be 2.24
     def findSelection(self):
