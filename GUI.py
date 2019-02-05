@@ -2,6 +2,7 @@ import string
 import decimal
 import math
 import tkinter as tk
+import tkinter.scrolledtext
 from tkinter.font import Font
 
 
@@ -26,38 +27,72 @@ class GUI():
         self.annotateFontColor = '#00FFFF'
         self.annotate_font = Font(family=self.textFontFamily, size=self.textFieldFontSize, weight='bold')
 
-        self.textField = tk.Text(self.root, height = textFieldSize[0], width = textFieldSize[1], font=(self.textFontFamily, self.textFieldFontSize))
+        self.textField = tk.scrolledtext.ScrolledText(self.root, height = textFieldSize[0], width = textFieldSize[1], font=(self.textFontFamily, self.textFieldFontSize))
+        self.annotationTextField = tk.scrolledtext.ScrolledText(self.root, height=textFieldSize[0], width = textFieldSize[1], font=(self.textFontFamily, self.textFieldFontSize))
+
+        self.textField.config(state='disabled')
+        self.annotationTextField.config(state='disabled')
+
+        self.annotationTextFieldLabel = tk.Label(self.root, text='Annotation Labels:')
+
 
         self.textField.tag_configure("ANNOTATE_SENSITIVE", font=self.annotate_font, background=self.annotateFontColor)
 
-        self.annotationButton = tk.Button(self.root, text="Sensitive", command = self.annotateButtonAction)
-        self.textField.pack()
-        self.annotationButton.pack()
+        buttonWidth = 15
+        self.annotationButton = tk.Button(self.root, width = buttonWidth, text="Annotate Sensitive", command = self.annotateButtonAction)
+        self.selectUserButton = tk.Button(self.root, width = buttonWidth, text="Select User", command=self.selectUserButtonAction)               #Todo
+        self.loadDataButton = tk.Button(self.root, width = buttonWidth, text="Load Data", command=self.loadDataButtonAction)                     #Todo
+        self.saveAnnotationButton = tk.Button(self.root, width = buttonWidth, text="Save Annotation", command=self.saveAnnotationButtonAction)   #Todo
+        self.nextButton = tk.Button(self.root, width = buttonWidth, text="Next", command=self.nextButtonAction)                                  #Todo
+        self.prevButton = tk.Button(self.root, width = buttonWidth, text="Prev", command=self.prevButtonAction)                                  #Todo
+
+        numberOfButtons = 6
+        self.annotationButton.grid(row=0, column=0, padx=10)
+        self.selectUserButton.grid(row=1, column=0)
+        self.loadDataButton.grid(row=2, column=0)
+        self.saveAnnotationButton.grid(row=3, column=0)
+        self.nextButton.grid(row=4, column=0)
+        self.prevButton.grid(row=5, column=0)
+        self.textField.grid(row=0, column=1, rowspan=numberOfButtons)
+        self.annotationTextFieldLabel.grid(row=numberOfButtons, column=0)
+        self.annotationTextField.grid(row=numberOfButtons, column=1)
 
         self.annotations = {}
+
+        options = []
+        with open('res/Users.txt', 'r') as txt:
+            for line in txt.readlines():
+                options.append(line.strip())
+
+        self.userMenuList = tk.StringVar(self.root)
+
+        menu = tk.OptionMenu(self.root, self.userMenuList, *options)
+        menu.grid(row=0, column=2)
 
 
     def startGUI(self):
         self.root.mainloop()
 
     def setup(self):
+        self.textField.config(state='normal')
         self.textField.insert(tk.INSERT, "Line 1 sdkljhsadfjkl asdjkhsaduiiuweqruiohasdfkn nm"
                                          "asdfnasdnfb,anasdfjklasdklfjsadkjfjklasdfkljasdjkfhasjkldfj"
                                          "kladsk uioasdiuajk iopsadfjasdklf\n")
         self.textField.insert(tk.INSERT, "Line 2 asdajkhasd kjhsdf uyajk, kjlasdfkjh, kshadf.\n")
         self.textField.insert(tk.INSERT, "Line 3 asdafdjkldf +909kjsdf kljsdfjh, sdfkshadf.\n")
         self.textField.insert(tk.INSERT, "Line 4 with 13\n")
-
         self.textField.config(state='disabled')
 
+
     def annotateButtonAction(self, _event=None):
-        indexStart, indexEnd = self.findSelection()
-        annotatedText = self.textField.get(indexStart, indexEnd)
         # tk.TclError exception is raised if not text is selected
         try:
+            indexStart, indexEnd = self.findSelection()
+            annotatedText = self.textField.get(indexStart, indexEnd)
+
             if (indexStart, indexEnd) not in self.annotations:
                 self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
-                self.annotations[(indexStart, indexEnd)] = annotatedText
+                self.annotations[(indexStart, indexEnd)] = ['sensitive', annotatedText]
             else:
                 self.textField.tag_remove('ANNOTATE_SENSITIVE', '1.0', tk.END)
                 del self.annotations[(indexStart, indexEnd)]
@@ -65,6 +100,7 @@ class GUI():
         except tk.TclError:
             print(f'No text selected')
 
+        self.updateAnnotationField()
         print(f'annotations: {self.annotations}')
 
     #Ugly as Tkinter uses floats as indexing, e.g. third char in line 2 would be 2.3, while 24'th char would be 2.24
@@ -123,5 +159,27 @@ class GUI():
         for k in self.annotations:
             self.textField.tag_add('ANNOTATE_SENSITIVE', k[0], k[1])
 
-    def bindKey(self, key):
-        self.root.bind(key, self.annotateButtonAction)
+    def updateAnnotationField(self):
+        self.annotationTextField.config(state='normal')
+        self.annotationTextField.delete('1.0', tk.END)
+        for k, v in self.annotations.items():
+            self.annotationTextField.insert(tk.INSERT,(f'{v[0]}: {v[1]}\n')) #v[0] is the label, v[1] is the string
+        self.annotationTextField.config(state='disabled')
+
+    def saveAnnotationButtonAction(self, _event=None):
+        pass
+
+    def selectUserButtonAction(self, _event=None):
+        pass
+
+    def loadDataButtonAction(self, _event=None):
+        pass
+
+    def nextButtonAction(self, _event=None):
+        print(f'Next button pressed')
+
+    def prevButtonAction(self, _event=None):
+        print(f'Prev button pressed')
+
+    def bindKey(self, key, func):
+        self.root.bind(key, func)

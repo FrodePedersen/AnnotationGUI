@@ -3,9 +3,11 @@ import GUI
 import decimal
 
 def main():
-    gui = GUI.GUI((1200,720), (20,100))
+    gui = GUI.GUI((1200,550), (10,80))
     gui.setup()
-    gui.bindKey('s')
+    gui.bindKey('s', gui.annotateButtonAction)
+    gui.bindKey('<Right>', gui.nextButtonAction)
+    gui.bindKey('<Left>', gui.prevButtonAction)
     gui.startGUI()
 
 
