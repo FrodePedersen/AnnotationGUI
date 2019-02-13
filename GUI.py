@@ -67,8 +67,9 @@ class GUI():
                 options.append(line.strip())
 
         self.userMenuList = tk.StringVar(self.root)
-
+        self.userMenuList.set('Frode')
         menu = tk.OptionMenu(self.root, self.userMenuList, *options)
+
         menu.grid(row=0, column=2)
 
         self.listOfAnnotations = []
@@ -91,18 +92,21 @@ class GUI():
         try:
             indexStart, indexEnd = self.findSelection()
             annotatedText = self.textField.get(indexStart, indexEnd)
-            if (indexStart, indexEnd) not in self.annotations:
+            informationDict = self.listOfAnnotations[self.workingStringIndex] #get dictionary of string currently being worked on
+            if (indexStart, indexEnd) not in informationDict['annotations']:
                 self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
+                informationDict['annotations'][(indexStart, indexEnd)] = ['sensitive', annotatedText]
+                informationDict['user'] = self.userMenuList.get()
                 self.annotations[(indexStart, indexEnd)] = ['sensitive', annotatedText, self.userMenuList.get()]
             else:
                 self.textField.tag_remove('ANNOTATE_SENSITIVE', '1.0', tk.END)
-                del self.annotations[(indexStart, indexEnd)]
+                del informationDict['annotations'][(indexStart, indexEnd)]
                 self.redrawAnnotations()
         except tk.TclError:
             print(f'No text selected')
 
         self.updateAnnotationField()
-        print(f'annotations: {self.annotations}')
+        print(f'annotations: {self.listOfAnnotations}')
 
     #Ugly as Tkinter uses floats as indexing, e.g. third char in line 2 would be 2.3, while 24'th char would be 2.24
     def findSelection(self):
@@ -157,14 +161,15 @@ class GUI():
         return selColumnCorrected, lineEndCeiling
 
     def redrawAnnotations(self):
-        for k in self.annotations:
+        for k in self.listOfAnnotations[self.workingStringIndex]['annotations']:
             self.textField.tag_add('ANNOTATE_SENSITIVE', k[0], k[1])
 
     def updateAnnotationField(self):
         self.annotationTextField.config(state='normal')
         self.annotationTextField.delete('1.0', tk.END)
-        for k, v in self.annotations.items():
-            self.annotationTextField.insert(tk.INSERT,(f'{v[0]}: {v[1]}, User: {v[2]}\n')) #v[0] is the label, v[1] is the string
+        for k, v in self.listOfAnnotations[self.workingStringIndex]['annotations'].items():
+            user = self.listOfAnnotations[self.workingStringIndex]['user']
+            self.annotationTextField.insert(tk.INSERT,(f'{v[0]}: {v[1]}, User: {user}\n')) #v[0] is the label, v[1] is the string
         self.annotationTextField.config(state='disabled')
 
     def saveAnnotationButtonAction(self, _event=None):
@@ -183,6 +188,8 @@ class GUI():
             self.textField.delete('1.0', tk.END)
             self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
             self.textField.config(state='disabled')
+            self.updateAnnotationField()
+            self.redrawAnnotations()
 
     def prevButtonAction(self, _event=None):
         if self.workingStringIndex > 0:
@@ -191,8 +198,8 @@ class GUI():
             self.textField.delete('1.0', tk.END)
             self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
             self.textField.config(state='disabled')
-
-        print(f'Prev button pressed')
+            self.updateAnnotationField()
+            self.redrawAnnotations()
 
     def bindKey(self, key, func):
         self.root.bind(key, func)
@@ -202,7 +209,7 @@ class GUI():
         for item in docs:
             self.listOfAnnotations.append({'doc_ID': item['doc_ID'],
                                          'user': None,
-                                         'annotations': None,
+                                         'annotations': {},
                                          'doc_string': item['doc_string']})
 
     def readDocs(self):
