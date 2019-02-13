@@ -41,24 +41,21 @@ class GUI():
 
         buttonWidth = 15
         self.annotationButton = tk.Button(self.root, width = buttonWidth, text="Annotate Sensitive", command = self.annotateButtonAction)
-        self.selectUserButton = tk.Button(self.root, width = buttonWidth, text="Select User", command=self.selectUserButtonAction)               #Todo
         self.loadDataButton = tk.Button(self.root, width = buttonWidth, text="Load Data", command=self.loadDataButtonAction)                     #Todo
         self.saveAnnotationButton = tk.Button(self.root, width = buttonWidth, text="Save Annotation", command=self.saveAnnotationButtonAction)   #Todo
         self.nextButton = tk.Button(self.root, width = buttonWidth, text="Next", command=self.nextButtonAction)                                  #Todo
         self.prevButton = tk.Button(self.root, width = buttonWidth, text="Prev", command=self.prevButtonAction)                                  #Todo
 
-        numberOfButtons = 6
+        numberOfButtons = 5
         self.annotationButton.grid(row=0, column=0, padx=10)
-        self.selectUserButton.grid(row=1, column=0)
-        self.loadDataButton.grid(row=2, column=0)
-        self.saveAnnotationButton.grid(row=3, column=0)
-        self.nextButton.grid(row=4, column=0)
-        self.prevButton.grid(row=5, column=0)
+        self.loadDataButton.grid(row=1, column=0)
+        self.saveAnnotationButton.grid(row=2, column=0)
+        self.nextButton.grid(row=3, column=0)
+        self.prevButton.grid(row=4, column=0)
         self.textField.grid(row=0, column=1, rowspan=numberOfButtons)
         self.annotationTextFieldLabel.grid(row=numberOfButtons, column=0)
         self.annotationTextField.grid(row=numberOfButtons, column=1)
 
-        self.annotations = {}
         self.workingStringIndex = 0
 
         options = []
@@ -95,9 +92,9 @@ class GUI():
             informationDict = self.listOfAnnotations[self.workingStringIndex] #get dictionary of string currently being worked on
             if (indexStart, indexEnd) not in informationDict['annotations']:
                 self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
-                informationDict['annotations'][(indexStart, indexEnd)] = ['sensitive', annotatedText]
-                informationDict['user'] = self.userMenuList.get()
-                self.annotations[(indexStart, indexEnd)] = ['sensitive', annotatedText, self.userMenuList.get()]
+                informationDict['annotations'][(indexStart, indexEnd)] = {'label': 'sensitive',
+                                                                          'annotatedString': annotatedText,
+                                                                          'user': self.userMenuList.get()}
             else:
                 self.textField.tag_remove('ANNOTATE_SENSITIVE', '1.0', tk.END)
                 del informationDict['annotations'][(indexStart, indexEnd)]
@@ -168,14 +165,13 @@ class GUI():
         self.annotationTextField.config(state='normal')
         self.annotationTextField.delete('1.0', tk.END)
         for k, v in self.listOfAnnotations[self.workingStringIndex]['annotations'].items():
-            user = self.listOfAnnotations[self.workingStringIndex]['user']
-            self.annotationTextField.insert(tk.INSERT,(f'{v[0]}: {v[1]}, User: {user}\n')) #v[0] is the label, v[1] is the string
+            label = v['label']
+            annotatedString = v['annotatedString']
+            user = v['user']
+            self.annotationTextField.insert(tk.INSERT,(f'{label}: {annotatedString}, User: {user}\n'))
         self.annotationTextField.config(state='disabled')
 
     def saveAnnotationButtonAction(self, _event=None):
-        pass
-
-    def selectUserButtonAction(self, _event=None):
         pass
 
     def loadDataButtonAction(self, _event=None):
@@ -208,7 +204,6 @@ class GUI():
 
         for item in docs:
             self.listOfAnnotations.append({'doc_ID': item['doc_ID'],
-                                         'user': None,
                                          'annotations': {},
                                          'doc_string': item['doc_string']})
 
