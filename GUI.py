@@ -172,7 +172,15 @@ class GUI():
         self.annotationTextField.config(state='disabled')
 
     def saveAnnotationButtonAction(self, _event=None):
-        pass
+        filename = 'test.json'
+        with open(filename, 'w+') as file:
+            for doc in self.listOfAnnotations:
+                doc_ID = doc['doc_ID']
+                annotations = doc['annotations']
+                file.write(f'{{doc_ID: {doc_ID},'
+                           f' annotations: {annotations}}}\n')
+
+
 
     def loadDataButtonAction(self, _event=None):
         pass
