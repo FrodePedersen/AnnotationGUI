@@ -5,6 +5,8 @@ import tkinter as tk
 import tkinter.scrolledtext
 from tkinter.font import Font
 from tkinter import messagebox
+from tkinter import filedialog
+import json
 
 
 class GUI():
@@ -41,17 +43,19 @@ class GUI():
 
         buttonWidth = 15
         self.annotationButton = tk.Button(self.root, width = buttonWidth, text="Annotate Sensitive", command = self.annotateButtonAction)
+        self.loadSessionButton = tk.Button(self.root, width = buttonWidth, text="Load Session", command=self.loadSessionButtonAction)                     #Todo
         self.loadDataButton = tk.Button(self.root, width = buttonWidth, text="Load Data", command=self.loadDataButtonAction)                     #Todo
-        self.saveAnnotationButton = tk.Button(self.root, width = buttonWidth, text="Save Annotation", command=self.saveAnnotationButtonAction)   #Todo
+        self.saveSessionButton = tk.Button(self.root, width = buttonWidth, text="Save Session", command=self.saveAnnotationButtonAction)   #Todo
         self.nextButton = tk.Button(self.root, width = buttonWidth, text="Next", command=self.nextButtonAction)                                  #Todo
         self.prevButton = tk.Button(self.root, width = buttonWidth, text="Prev", command=self.prevButtonAction)                                  #Todo
 
-        numberOfButtons = 5
+        numberOfButtons = 6
         self.annotationButton.grid(row=0, column=0, padx=10)
-        self.loadDataButton.grid(row=1, column=0)
-        self.saveAnnotationButton.grid(row=2, column=0)
-        self.nextButton.grid(row=3, column=0)
-        self.prevButton.grid(row=4, column=0)
+        self.loadSessionButton.grid(row=1, column=0)
+        self.loadDataButton.grid(row=2, column=0)
+        self.saveSessionButton.grid(row=3, column=0)
+        self.nextButton.grid(row=4, column=0)
+        self.prevButton.grid(row=5, column=0)
         self.textField.grid(row=0, column=1, rowspan=numberOfButtons)
         self.annotationTextFieldLabel.grid(row=numberOfButtons, column=0)
         self.annotationTextField.grid(row=numberOfButtons, column=1)
@@ -92,12 +96,12 @@ class GUI():
             informationDict = self.listOfAnnotations[self.workingStringIndex] #get dictionary of string currently being worked on
             if (indexStart, indexEnd) not in informationDict['annotations']:
                 self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
-                informationDict['annotations'][(indexStart, indexEnd)] = {'label': 'sensitive',
+                informationDict['annotations'][f"{indexStart},{indexEnd}"] = {'label': 'sensitive',
                                                                           'annotatedString': annotatedText,
                                                                           'user': self.userMenuList.get()}
             else:
                 self.textField.tag_remove('ANNOTATE_SENSITIVE', '1.0', tk.END)
-                del informationDict['annotations'][(indexStart, indexEnd)]
+                del informationDict['annotations'][f"{indexStart},{indexEnd}"]
                 self.redrawAnnotations()
         except tk.TclError:
             print(f'No text selected')
@@ -159,7 +163,8 @@ class GUI():
 
     def redrawAnnotations(self):
         for k in self.listOfAnnotations[self.workingStringIndex]['annotations']:
-            self.textField.tag_add('ANNOTATE_SENSITIVE', k[0], k[1])
+            indeces = k.split(",")
+            self.textField.tag_add('ANNOTATE_SENSITIVE', indeces[0], indeces[1])
 
     def updateAnnotationField(self):
         self.annotationTextField.config(state='normal')
@@ -174,16 +179,23 @@ class GUI():
     def saveAnnotationButtonAction(self, _event=None):
         filename = 'test.json'
         with open(filename, 'w+') as file:
-            for doc in self.listOfAnnotations:
-                doc_ID = doc['doc_ID']
-                annotations = doc['annotations']
-                file.write(f'{{doc_ID: {doc_ID},'
-                           f' annotations: {annotations}}}\n')
+            json.dump(self.listOfAnnotations,file)
 
 
+    def loadSessionButtonAction(self, _event=None):
+        file = tk.filedialog.askopenfile()
+        fileName = file.name
+        with open(fileName, 'r') as file:
+            self.listOfAnnotations = json.load(file)
+
+        self.updateAnnotationField()
+        self.redrawAnnotations()
 
     def loadDataButtonAction(self, _event=None):
-        pass
+        file = tk.filedialog.askopenfile()
+        fileName = file.name
+        with open(fileName, 'r') as file:
+            print("inside read")
 
     def nextButtonAction(self, _event=None):
         if self.workingStringIndex < len(self.listOfAnnotations)-1:
@@ -209,11 +221,12 @@ class GUI():
         self.root.bind(key, func)
 
     def populateListOfAnnotation(self, docs):
-
+        docList = []
         for item in docs:
-            self.listOfAnnotations.append({'doc_ID': item['doc_ID'],
+            docList.append({'doc_ID': item['doc_ID'],
                                          'annotations': {},
                                          'doc_string': item['doc_string']})
+        return docList
 
     def readDocs(self):
         testStrings = [{'doc_ID': 1,
@@ -226,7 +239,7 @@ class GUI():
                         'doc_string': "Line 3 asdafdjkldf +909kjsdf kljsdfjh, sdfkshadf.\n" },
                        {'doc_ID': 4,
                         'doc_string': "Line 4 with 13\n"}]
-        self.populateListOfAnnotation(testStrings)
+        self.listOfAnnotations = self.populateListOfAnnotation(testStrings)
         self.textField.config(state='normal')
         self.textField.delete('1.0', tk.END)
         self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
