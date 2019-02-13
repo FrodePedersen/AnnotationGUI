@@ -59,6 +59,7 @@ class GUI():
         self.annotationTextField.grid(row=numberOfButtons, column=1)
 
         self.annotations = {}
+        self.workingStringIndex = 0
 
         options = []
         with open('res/Users.txt', 'r') as txt:
@@ -70,19 +71,14 @@ class GUI():
         menu = tk.OptionMenu(self.root, self.userMenuList, *options)
         menu.grid(row=0, column=2)
 
+        self.listOfAnnotations = []
+
 
     def startGUI(self):
         self.root.mainloop()
 
     def setup(self):
-        self.textField.config(state='normal')
-        self.textField.insert(tk.INSERT, "Line 1 sdkljhsadfjkl asdjkhsaduiiuweqruiohasdfkn nm"
-                                         "asdfnasdnfb,anasdfjklasdklfjsadkjfjklasdfkljasdjkfhasjkldfj"
-                                         "kladsk uioasdiuajk iopsadfjasdklf\n")
-        self.textField.insert(tk.INSERT, "Line 2 asdajkhasd kjhsdf uyajk, kjlasdfkjh, kshadf.\n")
-        self.textField.insert(tk.INSERT, "Line 3 asdafdjkldf +909kjsdf kljsdfjh, sdfkshadf.\n")
-        self.textField.insert(tk.INSERT, "Line 4 with 13\n")
-        self.textField.config(state='disabled')
+        pass
 
 
     def annotateButtonAction(self, _event=None):
@@ -181,10 +177,47 @@ class GUI():
         pass
 
     def nextButtonAction(self, _event=None):
-        print(f'Next button pressed')
+        if self.workingStringIndex < len(self.listOfAnnotations)-1:
+            self.workingStringIndex += 1
+            self.textField.config(state='normal')
+            self.textField.delete('1.0', tk.END)
+            self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
+            self.textField.config(state='disabled')
 
     def prevButtonAction(self, _event=None):
+        if self.workingStringIndex > 0:
+            self.workingStringIndex -= 1
+            self.textField.config(state='normal')
+            self.textField.delete('1.0', tk.END)
+            self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
+            self.textField.config(state='disabled')
+
         print(f'Prev button pressed')
 
     def bindKey(self, key, func):
         self.root.bind(key, func)
+
+    def populateListOfAnnotation(self, docs):
+
+        for item in docs:
+            self.listOfAnnotations.append({'doc_ID': item['doc_ID'],
+                                         'user': None,
+                                         'annotations': None,
+                                         'doc_string': item['doc_string']})
+
+    def readDocs(self):
+        testStrings = [{'doc_ID': 1,
+                        'doc_string': "Line 1 sdkljhsadfjkl asdjkhsaduiiuweqruiohasdfkn nm"
+                                         "asdfnasdnfb,anasdfjklasdklfjsadkjfjklasdfkljasdjkfhasjkldfj"
+                                         "kladsk uioasdiuajk iopsadfjasdklf\n"},
+                       {'doc_ID': 2,
+                        'doc_string': "Line 2 asdajkhasd kjhsdf uyajk, kjlasdfkjh, kshadf.\n"},
+                       {'doc_ID': 3,
+                        'doc_string': "Line 3 asdafdjkldf +909kjsdf kljsdfjh, sdfkshadf.\n" },
+                       {'doc_ID': 4,
+                        'doc_string': "Line 4 with 13\n"}]
+        self.populateListOfAnnotation(testStrings)
+        self.textField.config(state='normal')
+        self.textField.delete('1.0', tk.END)
+        self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
+        self.textField.config(state='disabled')
