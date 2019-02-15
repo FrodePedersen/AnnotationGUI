@@ -7,7 +7,38 @@ from tkinter.font import Font
 from tkinter import messagebox
 from tkinter import filedialog
 import json
+import taboo_core.load_trees as load_trees
+import taboo_mon.sentenceSpliter as sentenceSpliter
 
+
+####
+# Data structure of the annotations are as follows:
+# {"Doc_ID": value,
+#  "annotations": {
+#                  "stringStartPos,stringEndPos": {
+#                                                    "label": value,
+#                                                    "annotatedString": string value,
+#                                                    "user": string value
+#                                                  }
+#                  },
+#  "doc_string": entire string shown in the GUI
+#
+# with annotations being a dictionary containing possibly multiple annotations per doc, with different labels and users.
+####
+####
+# E X A M P L E
+#
+# {"Doc_ID": 23,
+#  "annotations": {
+#                  "1.7,1.18": {
+#                                 "label": "sensitive",
+#                                 "annotatedString": "HIV positive,
+#                                 "user": Bob
+#                               }
+#                 },
+#  "doc_string": "he was HIV positive"
+#
+####
 
 class GUI():
 
@@ -82,6 +113,11 @@ class GUI():
     def setup(self):
         pass
 
+    def insertInitialtext(self):
+        self.textField.config(state='normal')
+        self.textField.delete('1.0', tk.END)
+        self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
+        self.textField.config(state='disabled')
 
     def annotateButtonAction(self, _event=None):
 
@@ -177,7 +213,7 @@ class GUI():
         self.annotationTextField.config(state='disabled')
 
     def saveAnnotationButtonAction(self, _event=None):
-        filename = 'test.json'
+        filename = tk.filedialog.asksaveasfilename()
         with open(filename, 'w+') as file:
             json.dump(self.listOfAnnotations,file)
 
@@ -188,14 +224,17 @@ class GUI():
         with open(fileName, 'r') as file:
             self.listOfAnnotations = json.load(file)
 
+        self.insertInitialtext()
         self.updateAnnotationField()
         self.redrawAnnotations()
 
     def loadDataButtonAction(self, _event=None):
         file = tk.filedialog.askopenfile()
         fileName = file.name
-        with open(fileName, 'r') as file:
-            print("inside read")
+        listOfDocs = self.readDocs(fileName)
+        self.listOfAnnotations = self.populateListOfAnnotation(listOfDocs)
+        self.insertInitialtext()
+
 
     def nextButtonAction(self, _event=None):
         if self.workingStringIndex < len(self.listOfAnnotations)-1:
@@ -228,19 +267,23 @@ class GUI():
                                          'doc_string': item['doc_string']})
         return docList
 
-    def readDocs(self):
-        testStrings = [{'doc_ID': 1,
-                        'doc_string': "Line 1 sdkljhsadfjkl asdjkhsaduiiuweqruiohasdfkn nm"
-                                         "asdfnasdnfb,anasdfjklasdklfjsadkjfjklasdfkljasdjkfhasjkldfj"
-                                         "kladsk uioasdiuajk iopsadfjasdklf\n"},
-                       {'doc_ID': 2,
-                        'doc_string': "Line 2 asdajkhasd kjhsdf uyajk, kjlasdfkjh, kshadf.\n"},
-                       {'doc_ID': 3,
-                        'doc_string': "Line 3 asdafdjkldf +909kjsdf kljsdfjh, sdfkshadf.\n" },
-                       {'doc_ID': 4,
-                        'doc_string': "Line 4 with 13\n"}]
-        self.listOfAnnotations = self.populateListOfAnnotation(testStrings)
-        self.textField.config(state='normal')
-        self.textField.delete('1.0', tk.END)
-        self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
-        self.textField.config(state='disabled')
+    def readDocs(self, fileName):
+        trees = []
+
+        with open(fileName, 'r') as file:
+            for line in file.readlines():
+                trees.append(load_trees.get_tree(line.rstrip(), fileName))
+
+        plainTexts = []
+
+        for tree in trees:
+            plainTexts.append(load_trees.output_sentence(tree))
+
+        placeholderDocId = 0
+        initialListOfDocs = []
+        for s in plainTexts:
+            initialListOfDocs.append({"doc_ID": placeholderDocId,
+                                      "doc_string": s})
+            placeholderDocId += 1
+
+        return initialListOfDocs
