@@ -48,7 +48,7 @@ class Timer:
 
 class TimerList:
     def __init__(self):
-        self.timers: List[Timer]; self.timers = []
+        self.timers: List[Timer]; self.timers = []  
         self.lastReport = time.time()
         self.totalTimer = None  # type:Timer
         self.forwardTimer = None  # type:Timer
@@ -155,3 +155,4 @@ def shuffleList(a, rng=RandomState(1234)):
     perm = rng.permutation(len(a))  # we have seen issues using the built-in shuffle
     aNew = [a[i] for i in perm]
     return aNew
+

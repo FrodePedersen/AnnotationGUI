@@ -5,7 +5,7 @@ Created on Thu Sep  1 12:36:32 2016
 @author: neerbek
 """
 import io
-import ai_util
+import taboo_core.ai_util as ai_util
 
 DEBUG_PRINT = False
 

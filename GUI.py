@@ -8,23 +8,27 @@ from tkinter import messagebox
 from tkinter import filedialog
 import json
 import taboo_core.load_trees as load_trees
-import taboo_mon.sentenceSpliter as sentenceSpliter
 
 
 ####
 # Data structure of the annotations are as follows:
-# {"Doc_ID": value,
-#  "annotations": {
-#                  "stringStartPos,stringEndPos": {
-#                                                    "label": value,
-#                                                    "annotatedString": string value,
-#                                                    "user": string value
-#                                                  }
-#                  },
-#  "doc_string": entire string shown in the GUI
+# {"Doc_ID": [{
+#           "annotations": {
+#                           "stringStartPos,stringEndPos": {
+#                                                                "label": value,
+#                                                                "annotatedString": string value,
+#                                                                "user": string value
+#                                                           }
+#                           },
+#           "sentence": entire sentence string shown in the GUI,
+#           "sentenceIndex": index of the sentence start in the monsanto Doc,
+#           "mon_fileName": filename of the monsanto Doc
+#       }]
+# }
 #
 # with annotations being a dictionary containing possibly multiple annotations per doc, with different labels and users.
 ####
+
 ####
 # E X A M P L E
 #
@@ -69,6 +73,22 @@ class GUI():
 
         self.annotationTextFieldLabel = tk.Label(self.root, text='Annotation Labels:')
 
+        #Header:
+        labelClass = 'MONSANTO'
+        fileName = 'placeholder.txt'
+        doc_ID = 'placeholder'
+        amountOfSentencesInDoc = 0
+        amountOfSentencesInFile = 0
+        amountOfSentencesProcessed = 0
+        amountOfAnnotations = 0
+        self.headerLabelClass = tk.Label(self.root, text=f'label Class: {labelClass}')
+        self.headerLabelFilename = tk.Label(self.root, text=f'Filename: {fileName}')
+        self.headerLabelDoc_ID = tk.Label(self.root, text=f'Doc_ID: {doc_ID}')
+        self.headerLabelSentencesInDoc = tk.Label(self.root, text=f'Sentences in Document: {amountOfSentencesInDoc}')
+        self.headerLabelSentencesInFile = tk.Label(self.root, text=f'Sentences in File: {amountOfSentencesInFile}')
+        self.headerLabelSentencesInProcessed = tk.Label(self.root, text=f'Sentences Processed: {amountOfSentencesProcessed}')
+        self.headerLabelAnnotationsSoFar = tk.Label(self.root, text=f'Amount of annotations so far: {amountOfAnnotations}')
+
 
         self.textField.tag_configure("ANNOTATE_SENSITIVE", font=self.annotate_font, background=self.annotateFontColor)
 
@@ -91,7 +111,10 @@ class GUI():
         self.annotationTextFieldLabel.grid(row=numberOfButtons, column=0)
         self.annotationTextField.grid(row=numberOfButtons, column=1)
 
-        self.workingStringIndex = 0
+        self.dictOfDocs = []
+        self.workingSentenceIndex = 0
+        self.workingDocIndex = 0
+        self.workingDocKey = ''
 
         options = []
         with open('res/Users.txt', 'r') as txt:
@@ -104,7 +127,6 @@ class GUI():
 
         menu.grid(row=0, column=2)
 
-        self.listOfAnnotations = []
 
 
     def startGUI(self):
@@ -116,7 +138,7 @@ class GUI():
     def insertInitialtext(self):
         self.textField.config(state='normal')
         self.textField.delete('1.0', tk.END)
-        self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
+        self.textField.insert(tk.INSERT, self.dictOfDocs[self.workingDocKey][self.workingSentenceIndex]['sentence'])
         self.textField.config(state='disabled')
 
     def annotateButtonAction(self, _event=None):
@@ -129,12 +151,12 @@ class GUI():
         try:
             indexStart, indexEnd = self.findSelection()
             annotatedText = self.textField.get(indexStart, indexEnd)
-            informationDict = self.listOfAnnotations[self.workingStringIndex] #get dictionary of string currently being worked on
+            informationDict = self.dictOfDocs[self.workingDocKey][self.workingSentenceIndex] #get dictionary of string currently being worked on
             if (indexStart, indexEnd) not in informationDict['annotations']:
                 self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
                 informationDict['annotations'][f"{indexStart},{indexEnd}"] = {'label': 'sensitive',
-                                                                          'annotatedString': annotatedText,
-                                                                          'user': self.userMenuList.get()}
+                                                                              'annotatedString': annotatedText,
+                                                                              'user': self.userMenuList.get()}
             else:
                 self.textField.tag_remove('ANNOTATE_SENSITIVE', '1.0', tk.END)
                 del informationDict['annotations'][f"{indexStart},{indexEnd}"]
@@ -143,7 +165,7 @@ class GUI():
             print(f'No text selected')
 
         self.updateAnnotationField()
-        print(f'annotations: {self.listOfAnnotations}')
+        #print(f'annotations: {self.dictOfDocs}')
 
     #Ugly as Tkinter uses floats as indexing, e.g. third char in line 2 would be 2.3, while 24'th char would be 2.24
     def findSelection(self):
@@ -198,31 +220,31 @@ class GUI():
         return selColumnCorrected, lineEndCeiling
 
     def redrawAnnotations(self):
-        for k in self.listOfAnnotations[self.workingStringIndex]['annotations']:
+        for k in self.dictOfDocs[self.workingDocKey][self.workingSentenceIndex]['annotations']:
             indeces = k.split(",")
             self.textField.tag_add('ANNOTATE_SENSITIVE', indeces[0], indeces[1])
 
     def updateAnnotationField(self):
         self.annotationTextField.config(state='normal')
         self.annotationTextField.delete('1.0', tk.END)
-        for k, v in self.listOfAnnotations[self.workingStringIndex]['annotations'].items():
+        for k, v in self.dictOfDocs[self.workingDocKey][self.workingSentenceIndex]['annotations'].items():
             label = v['label']
             annotatedString = v['annotatedString']
             user = v['user']
-            self.annotationTextField.insert(tk.INSERT,(f'{label}: {annotatedString}, User: {user}\n'))
+            self.annotationTextField.insert(tk.INSERT,(f'{label}: "{annotatedString}", User: {user}\n'))
         self.annotationTextField.config(state='disabled')
 
     def saveAnnotationButtonAction(self, _event=None):
         filename = tk.filedialog.asksaveasfilename()
         with open(filename, 'w+') as file:
-            json.dump(self.listOfAnnotations,file)
+            json.dump(self.dictOfDocs, file)
 
 
     def loadSessionButtonAction(self, _event=None):
         file = tk.filedialog.askopenfile()
         fileName = file.name
         with open(fileName, 'r') as file:
-            self.listOfAnnotations = json.load(file)
+            self.dictOfDocs = json.load(file)
 
         self.insertInitialtext()
         self.updateAnnotationField()
@@ -231,59 +253,70 @@ class GUI():
     def loadDataButtonAction(self, _event=None):
         file = tk.filedialog.askopenfile()
         fileName = file.name
-        listOfDocs = self.readDocs(fileName)
-        self.listOfAnnotations = self.populateListOfAnnotation(listOfDocs)
+        listOfDocs = self.readFile(fileName)
+        self.dictOfDocs = listOfDocs
+        self.workingDocKey = list(self.dictOfDocs)[0]
         self.insertInitialtext()
 
 
     def nextButtonAction(self, _event=None):
-        if self.workingStringIndex < len(self.listOfAnnotations)-1:
-            self.workingStringIndex += 1
-            self.textField.config(state='normal')
-            self.textField.delete('1.0', tk.END)
-            self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
-            self.textField.config(state='disabled')
-            self.updateAnnotationField()
-            self.redrawAnnotations()
+        if self.workingSentenceIndex < len(list(self.dictOfDocs[self.workingDocKey]))-1:
+            self.workingSentenceIndex += 1
+        else:
+            self.workingSentenceIndex = 0
+            if self.workingDocIndex+1 < len(list(self.dictOfDocs[self.workingDocKey]))-1:
+                self.workingDocIndex += 1
+                self.workingDocKey = list(self.dictOfDocs)[self.workingDocIndex]
+
+        self.textField.config(state='normal')
+        self.textField.delete('1.0', tk.END)
+        self.textField.insert(tk.INSERT, self.dictOfDocs[self.workingDocKey][self.workingSentenceIndex]['sentence'])
+        self.textField.config(state='disabled')
+        self.updateAnnotationField()
+        self.redrawAnnotations()
 
     def prevButtonAction(self, _event=None):
-        if self.workingStringIndex > 0:
-            self.workingStringIndex -= 1
-            self.textField.config(state='normal')
-            self.textField.delete('1.0', tk.END)
-            self.textField.insert(tk.INSERT, self.listOfAnnotations[self.workingStringIndex]['doc_string'])
-            self.textField.config(state='disabled')
-            self.updateAnnotationField()
-            self.redrawAnnotations()
+        if self.workingSentenceIndex > 0:
+            self.workingSentenceIndex -= 1
+        else:
+            if self.workingDocIndex > 0:
+                self.workingDocIndex -= 1
+                self.workingDocKey = list(self.dictOfDocs)[self.workingDocIndex]
+                self.workingSentenceIndex = len(list(self.dictOfDocs[self.workingDocKey]))-1
+
+        self.textField.config(state='normal')
+        self.textField.delete('1.0', tk.END)
+        self.textField.insert(tk.INSERT, self.dictOfDocs[self.workingDocKey][self.workingSentenceIndex]['sentence'])
+        self.textField.config(state='disabled')
+        self.updateAnnotationField()
+        self.redrawAnnotations()
 
     def bindKey(self, key, func):
         self.root.bind(key, func)
 
-    def populateListOfAnnotation(self, docs):
-        docList = []
-        for item in docs:
-            docList.append({'doc_ID': item['doc_ID'],
-                                         'annotations': {},
-                                         'doc_string': item['doc_string']})
-        return docList
-
-    def readDocs(self, fileName):
+    #Reads a file containing trees
+    #Returns a dictionary of docs with strings and meta data
+    def readFile(self, fileName):
         trees = []
 
         with open(fileName, 'r') as file:
             for line in file.readlines():
                 trees.append(load_trees.get_tree(line.rstrip(), fileName))
 
-        plainTexts = []
+        initialDictOfDocs = {}
 
         for tree in trees:
-            plainTexts.append(load_trees.output_sentence(tree))
+            doc_ID = tree.word
+            startCharIndex = tree.syntax
+            textNode = tree.left
+            mon_fileNameNode = tree.right
+            text = load_trees.unescape_sentence(load_trees.output_sentence(textNode))
+            mon_fileName = load_trees.output_sentence(mon_fileNameNode)
+            if doc_ID not in initialDictOfDocs:
+                initialDictOfDocs[doc_ID] = []
 
-        placeholderDocId = 0
-        initialListOfDocs = []
-        for s in plainTexts:
-            initialListOfDocs.append({"doc_ID": placeholderDocId,
-                                      "doc_string": s})
-            placeholderDocId += 1
-
-        return initialListOfDocs
+            initialDictOfDocs[doc_ID].append({"sentence": text,
+                                              "sentenceIndex": startCharIndex,
+                                              "mon_fileName": mon_fileName,
+                                              "annotations": {} })
+        return initialDictOfDocs
