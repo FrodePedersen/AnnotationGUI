@@ -88,7 +88,7 @@ class GUI():
         self.headerLabelSentencesInDoc = tk.Label(self.root, text=f'Sentences in Document: {amountOfSentencesInDoc}', width=30)
         self.headerLabelSentencesInFile = tk.Label(self.root, text=f'Sentences in File: {self.amountOfSentencesInFile}', width=25)
         self.headerLabelSentencesInProcessed = tk.Label(self.root, text=f'Current Sentence index: {self.amountOfSentencesProcessed}',width=35)
-        self.headerLabelAnnotationsSoFar = tk.Label(self.root, text=f'Amount of annotations so far: {self.amountOfAnnotations}',width=30)
+        self.headerLabelAnnotationsSoFar = tk.Label(self.root, text=f'Amount of annotations this session: {self.amountOfAnnotations}',width=30)
         self.headerLabelUser = tk.Label(self.root, text=f'User:',width=20)
 
 
@@ -109,7 +109,7 @@ class GUI():
                 options.append(line.strip())
 
         self.userMenuList = tk.StringVar(self.root)
-        self.userMenuList.set('Frode')
+        #self.userMenuList.set('Frode') DEBUGGING
         menu = tk.OptionMenu(self.root, self.userMenuList, *options)
 
         #Layout
@@ -155,7 +155,7 @@ class GUI():
         self.headerLabelSentencesInFile['text'] = f'Sentences in File: {self.amountOfSentencesInFile}'
         self.headerLabelSentencesInDoc['text'] = f'Sentences in Document: {len(self.listOfdictOfDocs[self.workingDocKey])}'
         self.headerLabelSentencesInProcessed['text'] = f'Current Sentence index: {self.amountOfSentencesProcessed}'
-        self.headerLabelAnnotationsSoFar['text'] = f'Amount of annotations so far: {self.amountOfAnnotations}'
+        self.headerLabelAnnotationsSoFar['text'] = f'Amount of annotations this session: {self.amountOfAnnotations}'
 
 
 
@@ -166,7 +166,7 @@ class GUI():
         pass
 
     def insertInitialtext(self):
-        
+
         self.workingDocKey = list(self.listOfdictOfDocs)[0]
         self.amountOfSentencesInFile = 0
         for v in self.listOfdictOfDocs.values():
@@ -175,6 +175,8 @@ class GUI():
         self.amountOfSentencesProcessed = 0
         self.workingDocIndex = 0
         self.workingSentenceIndex = 0
+
+        self.amountOfAnnotations = 0
 
         self.textField.config(state='normal')
         self.textField.delete('1.0', tk.END)
