@@ -117,7 +117,7 @@ class GUI():
         numberOfHeaderLabels = 7
         self.headerLabelClass.grid(row=0, column=1, padx=2)
         self.headerLabelFilename.grid(row=0, column=2, padx=2)
-        self.headerLabelDoc_ID.grid(row=0, column=3, padx=2)
+        #self.headerLabelDoc_ID.grid(row=0, column=3, padx=2)
         self.headerLabelUser.grid(row=0, column=5, padx=2)
         self.headerLabelSentencesInDoc.grid(row=1, column=1, padx=2)
         self.headerLabelSentencesInFile.grid(row=1, column=2, padx=2)
@@ -310,7 +310,7 @@ class GUI():
             self.workingSentenceIndex += 1
         else:
             self.workingSentenceIndex = 0
-            if self.workingDocIndex+1 < len(list(self.listOfdictOfDocs[self.workingDocKey]))-1:
+            if self.workingDocIndex+1 < len(list(self.listOfdictOfDocs))-1:
                 self.workingDocIndex += 1
                 self.workingDocKey = list(self.listOfdictOfDocs)[self.workingDocIndex]
 
