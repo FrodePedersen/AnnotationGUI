@@ -8,6 +8,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 import json
 import taboo_core.load_trees as load_trees
+import re
 
 
 ####
@@ -67,9 +68,11 @@ class GUI():
 
         self.textField = tk.scrolledtext.ScrolledText(self.root, height = textFieldSize[0], width = textFieldSize[1], font=(self.textFontFamily, self.textFieldFontSize))
         self.annotationTextField = tk.scrolledtext.ScrolledText(self.root, height=textFieldSize[0], width = textFieldSize[1], font=(self.textFontFamily, self.textFieldFontSize))
+        self.annotationGuideField = tk.scrolledtext.ScrolledText(self.root, height=textFieldSize[0], width = int(textFieldSize[1] / 4), font=(self.textFontFamily, self.textFieldFontSize))
 
         self.textField.config(state='disabled')
         self.annotationTextField.config(state='disabled')
+        self.annotationGuideField.config(state='disabled')
 
         self.annotationTextFieldLabel = tk.Label(self.root, text='Annotation Labels:')
 
@@ -89,19 +92,20 @@ class GUI():
         self.headerLabelSentencesInFile = tk.Label(self.root, text=f'Sentences in File: {self.amountOfSentencesInFile}', width=25)
         self.headerLabelSentencesInProcessed = tk.Label(self.root, text=f'Current Sentence index: {self.amountOfSentencesProcessed}',width=35)
         self.headerLabelAnnotationsSoFar = tk.Label(self.root, text=f'Amount of annotations this session: {self.amountOfAnnotations}',width=30)
-        self.headerLabelUser = tk.Label(self.root, text=f'User:',width=20)
+        self.headerLabelGuide = tk.Label(self.root, text=f'Guide:', width=20)
+
 
 
 
         self.textField.tag_configure("ANNOTATE_SENSITIVE", font=self.annotate_font, background=self.annotateFontColor)
-
-        buttonWidth = 15
-        self.annotationButton = tk.Button(self.root, width = buttonWidth, text="Annotate Sensitive", command = self.annotateButtonAction)
+        buttonWidth = 17
+        self.annotationButton = tk.Button(self.root, width = buttonWidth, text="Annotate Sensitive ( s )", command = self.annotateButtonAction)
         self.loadSessionButton = tk.Button(self.root, width = buttonWidth, text="Load Session", command=self.loadSessionButtonAction)
         self.loadDataButton = tk.Button(self.root, width = buttonWidth, text="Load Data", command=self.loadDataButtonAction)
         self.saveSessionButton = tk.Button(self.root, width = buttonWidth, text="Save Session", command=self.saveAnnotationButtonAction)
-        self.nextButton = tk.Button(self.root, width = buttonWidth, text="Next", command=self.nextButtonAction)
-        self.prevButton = tk.Button(self.root, width = buttonWidth, text="Prev", command=self.prevButtonAction)
+        self.nextButton = tk.Button(self.root, width = buttonWidth, text="Next ( -> )", command=self.nextButtonAction)
+        self.prevButton = tk.Button(self.root, width = buttonWidth, text="Prev ( <- )", command=self.prevButtonAction)
+        self.guideButton = tk.Button(self.root, width = buttonWidth, text="Labeling Guide", command=self.guideButtonAction)
 
         options = []
         with open('res/Users.txt', 'r') as txt:
@@ -109,8 +113,9 @@ class GUI():
                 options.append(line.strip())
 
         self.userMenuList = tk.StringVar(self.root)
-        #self.userMenuList.set('Frode') DEBUGGING
-        menu = tk.OptionMenu(self.root, self.userMenuList, *options)
+        self.userMenuList.set('Select User')
+        self.menu = tk.OptionMenu(self.root, self.userMenuList, *options)
+        self.guide = None
 
         #Layout
         numberOfButtons = 6
@@ -118,14 +123,13 @@ class GUI():
         self.headerLabelClass.grid(row=0, column=1, padx=2)
         self.headerLabelFilename.grid(row=0, column=2, padx=2)
         #self.headerLabelDoc_ID.grid(row=0, column=3, padx=2)
-        self.headerLabelUser.grid(row=0, column=5, padx=2)
+        self.headerLabelGuide.grid(row=1, column=5, padx=2)
         self.headerLabelSentencesInDoc.grid(row=1, column=1, padx=2)
         self.headerLabelSentencesInFile.grid(row=1, column=2, padx=2)
         self.headerLabelSentencesInProcessed.grid(row=1, column=3, padx=2)
         self.headerLabelAnnotationsSoFar.grid(row=1, column=4, padx=2)
 
 
-        menu.grid(row=1, column=5)
 
         self.annotationButton.grid(row=2, column=0, padx=10)
         self.loadSessionButton.grid(row=3, column=0)
@@ -133,11 +137,13 @@ class GUI():
         self.saveSessionButton.grid(row=5, column=0)
         self.nextButton.grid(row=6, column=0)
         self.prevButton.grid(row=7, column=0)
+        self.menu.grid(row=8, column=0)
+        self.guideButton.grid(row=9, column=0)
 
-        self.textField.grid(row=2, column=1, rowspan=6, columnspan=4)
-        self.annotationTextFieldLabel.grid(row=numberOfButtons+2, column=0)
-        self.annotationTextField.grid(row=numberOfButtons+2, column=1, rowspan=numberOfButtons, columnspan=4)
-
+        self.textField.grid(row=2, column=1, rowspan=8, columnspan=4)
+        #self.annotationTextFieldLabel.grid(row=numberOfButtons+2, column=0)
+        #self.annotationTextField.grid(row=numberOfButtons+2, column=1, rowspan=numberOfButtons, columnspan=4)
+        self.annotationGuideField.grid(row=2, column=5, rowspan=8)
         self.listOfdictOfDocs = []
         self.workingSentenceIndex = 0
         self.workingDocIndex = 0
@@ -185,9 +191,9 @@ class GUI():
         self.formatHeaderLabels()
 
     def annotateButtonAction(self, _event=None):
-
-        if self.userMenuList.get() == '':
-            messagebox.showinfo('Invalid Action', 'Invalid User, please select a User')
+        user = self.userMenuList.get()
+        if user == '' or user == 'Select User' or user == 'None':
+            messagebox.showinfo('Invalid Action', f'Invalid User: -> {user} <-, please select a User')
             return
 
         # tk.TclError exception is raised if not text is selected
@@ -195,12 +201,21 @@ class GUI():
             indexStart, indexEnd = self.findSelection()
             annotatedText = self.textField.get(indexStart, indexEnd)
             informationDict = self.listOfdictOfDocs[self.workingDocKey][self.workingSentenceIndex] #get dictionary of string currently being worked on
+
+            sentence = informationDict['sentence']
+            regex = re.compile(r"\b{}\b".format(annotatedText), re.I)  # with the ignorecase option
+            matchObj = regex.search(sentence)
+            (start, end) = matchObj.span()
             if f'{indexStart},{indexEnd}' not in informationDict['annotations']:
-                self.textField.tag_add('ANNOTATE_SENSITIVE', indexStart, indexEnd)
                 informationDict['annotations'][f"{indexStart},{indexEnd}"] = {'label': 'sensitive',
                                                                               'annotatedString': annotatedText,
-                                                                              'user': self.userMenuList.get()}
+                                                                              'user': self.userMenuList.get(),
+                                                                              'stringIdx': (start, end)}
                 self.amountOfAnnotations += 1
+
+                #print(f'annotated idx: {start, end}, text: {annotatedText}')
+                entry = informationDict['annotations'][f"{indexStart},{indexEnd}"]
+                #print(f'entry: {entry}')
 
             else:
                 self.textField.tag_remove('ANNOTATE_SENSITIVE', '1.0', tk.END)
@@ -211,6 +226,7 @@ class GUI():
             print(f'No text selected')
 
         self.updateAnnotationField()
+        self.redrawAnnotations()
         #print(f'annotations: {self.listOfdictOfDocs}')
 
     #Ugly as Tkinter uses floats as indexing, e.g. third char in line 2 would be 2.3, while 24'th char would be 2.24
@@ -270,7 +286,27 @@ class GUI():
             indeces = k.split(",")
             self.textField.tag_add('ANNOTATE_SENSITIVE', indeces[0], indeces[1])
 
+    def focusText(self, startIdx, endIdx):
+        self.textField.tag_add('ANNOTATE_FOCUS', startIdx, endIdx)
+
     def updateAnnotationField(self):
+        preSentences, postSentences = self.collectText()
+        preEndIndex = None
+        self.textField.config(state='normal')
+        self.textField.delete('1.0', tk.END)
+        for sentenceDict in preSentences[::-1]:
+            print(f'sentenceDictPRE: {sentenceDict}')
+            self.textField.insert(tk.INSERT, sentenceDict['sentence'])
+        if preSentences:
+            self.textField.insert(tk.INSERT, '\n\n')
+        self.textField.insert(tk.INSERT, '-'*10 + '\n\n')
+        self.textField.insert(tk.INSERT, self.listOfdictOfDocs[self.workingDocKey][self.workingSentenceIndex]['sentence']+'\n\n')
+        self.textField.insert(tk.INSERT, '-' * 10 + '\n\n')
+        for sentenceDict in postSentences:
+            self.textField.insert(tk.INSERT, sentenceDict['sentence'])
+        self.textField.config(state='disabled')
+
+
         self.annotationTextField.config(state='normal')
         self.annotationTextField.delete('1.0', tk.END)
         for k, v in self.listOfdictOfDocs[self.workingDocKey][self.workingSentenceIndex]['annotations'].items():
@@ -280,6 +316,7 @@ class GUI():
             self.annotationTextField.insert(tk.INSERT,(f'{label}: "{annotatedString}", User: {user}\n'))
         self.annotationTextField.config(state='disabled')
         self.formatHeaderLabels()
+        self.displayGuide()
 
     def saveAnnotationButtonAction(self, _event=None):
         filename = tk.filedialog.asksaveasfilename()
@@ -303,6 +340,8 @@ class GUI():
         self.listOfdictOfDocs = listOfDocs
 
         self.insertInitialtext()
+        self.updateAnnotationField()
+        self.redrawAnnotations()
 
 
     def nextButtonAction(self, _event=None):
@@ -314,10 +353,6 @@ class GUI():
                 self.workingDocIndex += 1
                 self.workingDocKey = list(self.listOfdictOfDocs)[self.workingDocIndex]
 
-        self.textField.config(state='normal')
-        self.textField.delete('1.0', tk.END)
-        self.textField.insert(tk.INSERT, self.listOfdictOfDocs[self.workingDocKey][self.workingSentenceIndex]['sentence'])
-        self.textField.config(state='disabled')
         if self.amountOfSentencesProcessed < self.amountOfSentencesInFile-1:
             self.amountOfSentencesProcessed += 1
         self.updateAnnotationField()
@@ -332,10 +367,7 @@ class GUI():
                 self.workingDocKey = list(self.listOfdictOfDocs)[self.workingDocIndex]
                 self.workingSentenceIndex = len(list(self.listOfdictOfDocs[self.workingDocKey])) - 1
 
-        self.textField.config(state='normal')
-        self.textField.delete('1.0', tk.END)
-        self.textField.insert(tk.INSERT, self.listOfdictOfDocs[self.workingDocKey][self.workingSentenceIndex]['sentence'])
-        self.textField.config(state='disabled')
+
         if self.amountOfSentencesProcessed > 0:
             self.amountOfSentencesProcessed -= 1
         self.updateAnnotationField()
@@ -370,3 +402,52 @@ class GUI():
                                               "mon_fileName": mon_fileName,
                                               "annotations": {} })
         return initialDictOfDocs
+
+    def guideButtonAction(self):
+        file = tk.filedialog.askopenfile()
+        fileName = file.name
+        guideJson = []
+        self.guide = {}
+        with open(fileName, 'r') as file:
+            self.guideJson = json.load(file)
+
+        for dict in self.guideJson:
+            self.guide[dict['monsantoId']] = {'label': dict['label'],
+                                             'uriText': dict['uriText']}
+
+        self.displayGuide()
+
+    def displayGuide(self):
+        #print(self.guide)
+        try:
+            if self.guide != None:
+                currentDoc = self.workingDocKey
+                self.annotationGuideField.config(state="normal")
+                self.annotationGuideField.delete('1.0', tk.END)
+                self.annotationGuideField.insert(tk.INSERT, 'Label:\n' + self.guide[currentDoc]['label'])
+                self.annotationGuideField.insert(tk.INSERT, '\n\nGuide Text:\n')
+                self.annotationGuideField.insert(tk.INSERT, self.guide[currentDoc]['uriText'])
+                self.annotationGuideField.config(state="disabled")
+        except:
+            self.annotationGuideField.config(state="normal")
+            self.annotationGuideField.delete('1.0', tk.END)
+            self.annotationGuideField.insert(tk.INSERT, 'NO GUIDE FOUND FOR THIS DOCUMENT')
+            self.annotationGuideField.config(state="disabled")
+
+    def collectText(self):
+        listOfSentences = list(self.listOfdictOfDocs[self.workingDocKey])
+        preSentences = []
+        postSentences = []
+        if self.workingSentenceIndex > 0:
+            for i in range(self.workingSentenceIndex-1,-1,-1):
+                preSentences.append(listOfSentences[i])
+                if len(preSentences) >= 3:
+                    break
+        if self.workingSentenceIndex < len(listOfSentences):
+            for i in range(self.workingSentenceIndex+1,len(listOfSentences)):
+                postSentences.append(listOfSentences[i])
+                if len(postSentences) >= 3:
+                    break
+
+
+        return preSentences, postSentences
