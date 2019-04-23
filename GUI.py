@@ -295,7 +295,7 @@ class GUI():
         self.textField.config(state='normal')
         self.textField.delete('1.0', tk.END)
         for sentenceDict in preSentences[::-1]:
-            print(f'sentenceDictPRE: {sentenceDict}')
+            #print(f'sentenceDictPRE: {sentenceDict}')
             self.textField.insert(tk.INSERT, sentenceDict['sentence'])
         if preSentences:
             self.textField.insert(tk.INSERT, '\n\n')
@@ -413,7 +413,7 @@ class GUI():
 
         for dict in self.guideJson:
             self.guide[dict['monsantoId']] = {'label': dict['label'],
-                                             'uriText': dict['uriText']}
+                                             'uriText': dict['text']['val']}
 
         self.displayGuide()
 
