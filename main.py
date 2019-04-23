@@ -3,7 +3,7 @@ import GUI
 import decimal
 
 def main():
-    gui = GUI.GUI((1325 ,550), (20,80))
+    gui = GUI.GUI((1200 ,550), (20, 60))
     gui.setup()
     #gui.readDocs()
     gui.bindKey('s', gui.annotateButtonAction)

@@ -60,21 +60,26 @@ class GUI():
         self.root.geometry(f'{self.GUIheight}x{self.GUIwidth}')
         self.root.title('Annotation Tool')
 
+        dummyFrame = tk.Frame(self.root)
+        headerFrame = tk.Frame(self.root)
+        buttonFrame = tk.Frame(self.root)
+        textFrame = tk.Frame(self.root)
+
 
         self.textFontFamily = 'Helvetica'
         self.textFieldFontSize = 14
         self.annotateFontColor = '#00FFFF'
         self.annotate_font = Font(family=self.textFontFamily, size=self.textFieldFontSize, weight='bold')
 
-        self.textField = tk.scrolledtext.ScrolledText(self.root, height = textFieldSize[0], width = textFieldSize[1], font=(self.textFontFamily, self.textFieldFontSize))
-        self.annotationTextField = tk.scrolledtext.ScrolledText(self.root, height=textFieldSize[0], width = textFieldSize[1], font=(self.textFontFamily, self.textFieldFontSize))
-        self.annotationGuideField = tk.scrolledtext.ScrolledText(self.root, height=textFieldSize[0], width = int(textFieldSize[1] / 4), font=(self.textFontFamily, self.textFieldFontSize))
+        self.textField = tk.scrolledtext.ScrolledText(textFrame, font=(self.textFontFamily, self.textFieldFontSize)) #height = textFieldSize[0], width = textFieldSize[1],
+        #self.annotationTextField = tk.scrolledtext.ScrolledText(textFrame, height=textFieldSize[0], width = textFieldSize[1], font=(self.textFontFamily, self.textFieldFontSize))
+        self.annotationGuideField = tk.scrolledtext.ScrolledText(textFrame, font=(self.textFontFamily, self.textFieldFontSize)) # height=textFieldSize[0], width = int(textFieldSize[1] / 4),
 
         self.textField.config(state='disabled')
-        self.annotationTextField.config(state='disabled')
+        #self.annotationTextField.config(state='disabled')
         self.annotationGuideField.config(state='disabled')
 
-        self.annotationTextFieldLabel = tk.Label(self.root, text='Annotation Labels:')
+        #self.annotationTextFieldLabel = tk.Label(textFrame, text='Annotation Labels:')
 
         #Header:
         labelClass = 'NONE'
@@ -85,27 +90,27 @@ class GUI():
         self.amountOfSentencesProcessed = 0
         self.amountOfAnnotations = 0
 
-        self.headerLabelClass = tk.Label(self.root, text=f'label Class: {labelClass}', width=30)
-        self.headerLabelFilename = tk.Label(self.root, text=f'Filename: {fileName}',  width=30)
-        self.headerLabelDoc_ID = tk.Label(self.root, text=f'Doc_ID: {doc_ID}', width=30)
-        self.headerLabelSentencesInDoc = tk.Label(self.root, text=f'Sentences in Document: {amountOfSentencesInDoc}', width=30)
-        self.headerLabelSentencesInFile = tk.Label(self.root, text=f'Sentences in File: {self.amountOfSentencesInFile}', width=25)
-        self.headerLabelSentencesInProcessed = tk.Label(self.root, text=f'Current Sentence index: {self.amountOfSentencesProcessed}',width=35)
-        self.headerLabelAnnotationsSoFar = tk.Label(self.root, text=f'Amount of annotations this session: {self.amountOfAnnotations}',width=30)
-        self.headerLabelGuide = tk.Label(self.root, text=f'Guide:', width=20)
+        self.headerLabelClass = tk.Label(headerFrame, text=f'label Class: {labelClass}', width=30)
+        self.headerLabelFilename = tk.Label(headerFrame, text=f'Filename: {fileName}',  width=30)
+        self.headerLabelDoc_ID = tk.Label(headerFrame, text=f'Doc_ID: {doc_ID}', width=30)
+        self.headerLabelSentencesInDoc = tk.Label(headerFrame, text=f'Sentences in Document: {amountOfSentencesInDoc}', width=30)
+        self.headerLabelSentencesInFile = tk.Label(headerFrame, text=f'Sentences in File: {self.amountOfSentencesInFile}', width=25)
+        self.headerLabelSentencesInProcessed = tk.Label(headerFrame, text=f'Current Sentence index: {self.amountOfSentencesProcessed}',width=35)
+        self.headerLabelAnnotationsSoFar = tk.Label(headerFrame, text=f'Amount of annotations this session: {self.amountOfAnnotations}',width=30)
+        self.headerLabelGuide = tk.Label(headerFrame, text=f'Guide:', width=20)
 
 
 
 
         self.textField.tag_configure("ANNOTATE_SENSITIVE", font=self.annotate_font, background=self.annotateFontColor)
         buttonWidth = 17
-        self.annotationButton = tk.Button(self.root, width = buttonWidth, text="Annotate Sensitive ( s )", command = self.annotateButtonAction)
-        self.loadSessionButton = tk.Button(self.root, width = buttonWidth, text="Load Session", command=self.loadSessionButtonAction)
-        self.loadDataButton = tk.Button(self.root, width = buttonWidth, text="Load Data", command=self.loadDataButtonAction)
-        self.saveSessionButton = tk.Button(self.root, width = buttonWidth, text="Save Session", command=self.saveAnnotationButtonAction)
-        self.nextButton = tk.Button(self.root, width = buttonWidth, text="Next ( -> )", command=self.nextButtonAction)
-        self.prevButton = tk.Button(self.root, width = buttonWidth, text="Prev ( <- )", command=self.prevButtonAction)
-        self.guideButton = tk.Button(self.root, width = buttonWidth, text="Labeling Guide", command=self.guideButtonAction)
+        self.annotationButton = tk.Button(buttonFrame, width = buttonWidth, text="Annotate Sensitive ( s )", command = self.annotateButtonAction)
+        self.loadSessionButton = tk.Button(buttonFrame, width = buttonWidth, text="Load Session", command=self.loadSessionButtonAction)
+        self.loadDataButton = tk.Button(buttonFrame, width = buttonWidth, text="Load Data", command=self.loadDataButtonAction)
+        self.saveSessionButton = tk.Button(buttonFrame, width = buttonWidth, text="Save Session", command=self.saveAnnotationButtonAction)
+        self.nextButton = tk.Button(buttonFrame, width = buttonWidth, text="Next ( -> )", command=self.nextButtonAction)
+        self.prevButton = tk.Button(buttonFrame, width = buttonWidth, text="Prev ( <- )", command=self.prevButtonAction)
+        self.guideButton = tk.Button(buttonFrame, width = buttonWidth, text="Labeling Guide", command=self.guideButtonAction)
 
         options = []
         with open('res/Users.txt', 'r') as txt:
@@ -114,36 +119,74 @@ class GUI():
 
         self.userMenuList = tk.StringVar(self.root)
         self.userMenuList.set('Select User')
-        self.menu = tk.OptionMenu(self.root, self.userMenuList, *options)
+        self.menu = tk.OptionMenu(buttonFrame, self.userMenuList, *options)
         self.guide = None
 
         #Layout
-        numberOfButtons = 6
-        numberOfHeaderLabels = 7
-        self.headerLabelClass.grid(row=0, column=1, padx=2)
-        self.headerLabelFilename.grid(row=0, column=2, padx=2)
-        #self.headerLabelDoc_ID.grid(row=0, column=3, padx=2)
-        self.headerLabelGuide.grid(row=1, column=5, padx=2)
-        self.headerLabelSentencesInDoc.grid(row=1, column=1, padx=2)
-        self.headerLabelSentencesInFile.grid(row=1, column=2, padx=2)
-        self.headerLabelSentencesInProcessed.grid(row=1, column=3, padx=2)
-        self.headerLabelAnnotationsSoFar.grid(row=1, column=4, padx=2)
+        numberOfRowCells = 6
+        numberOfColumnCells = 10
+        #root window
+        tk.Grid.rowconfigure(self.root, 0, weight=1)
+        tk.Grid.rowconfigure(self.root, 1, weight=6)
+        tk.Grid.columnconfigure(self.root, 0, weight=1)
+        tk.Grid.columnconfigure(self.root, 1, weight=6)
 
+        #Frame windows
+        dummyFrame.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
+        headerFrame.grid(row=0, column=1, sticky=tk.N+tk.S+tk.E+tk.W)
+        buttonFrame.grid(row=1, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
+        textFrame.grid(row=1, column=1, sticky=tk.N+tk.S+tk.E+tk.W)
+        dummyFrame.grid_propagate(False)
+        headerFrame.grid_propagate(False)
+        buttonFrame.grid_propagate(False)
+        textFrame.grid_propagate(False)
 
+        #Dummy layout
+        tk.Grid.rowconfigure(dummyFrame, 0, weight=1)
+        tk.Grid.columnconfigure(dummyFrame, 0, weight=1)
 
-        self.annotationButton.grid(row=2, column=0, padx=10)
-        self.loadSessionButton.grid(row=3, column=0)
-        self.loadDataButton.grid(row=4, column=0)
-        self.saveSessionButton.grid(row=5, column=0)
-        self.nextButton.grid(row=6, column=0)
-        self.prevButton.grid(row=7, column=0)
-        self.menu.grid(row=8, column=0)
-        self.guideButton.grid(row=9, column=0)
+        #Header layout
+        for i in range(2):
+            tk.Grid.rowconfigure(headerFrame, i, weight=1)
+            for j in range(5):
+                tk.Grid.columnconfigure(headerFrame, j, weight=1)
 
-        self.textField.grid(row=2, column=1, rowspan=8, columnspan=4)
+        # self.headerLabelClass.grid(row=0, column=1, padx=2)
+        self.headerLabelDoc_ID.grid(row=0, column=0)
+        self.headerLabelFilename.grid(row=0, column=1)
+        self.headerLabelSentencesInDoc.grid(row=1, column=0)
+        self.headerLabelSentencesInFile.grid(row=1, column=1)
+        self.headerLabelSentencesInProcessed.grid(row=1, column=2)
+        self.headerLabelAnnotationsSoFar.grid(row=0, column=2)
+        self.headerLabelGuide.grid(row=1, column=3)
+
+        #Button layout
+        numberOfButtons = 8
+        for i in range(numberOfButtons):
+            tk.Grid.rowconfigure(buttonFrame, i, weight=1)
+            tk.Grid.columnconfigure(buttonFrame,0, weight=1)
+
+        self.annotationButton.grid(row=0, column=0)
+        self.loadSessionButton.grid(row=1, column=0)
+        self.loadDataButton.grid(row=2, column=0)
+        self.saveSessionButton.grid(row=3, column=0)
+        self.nextButton.grid(row=4, column=0)
+        self.prevButton.grid(row=5, column=0)
+        self.menu.grid(row=6, column=0)
+        self.guideButton.grid(row=7, column=0)
+
+        #Textframe layouts
+        tk.Grid.columnconfigure(textFrame, 0, weight=1)
+        tk.Grid.columnconfigure(textFrame, 1,  weight=6)
+        tk.Grid.rowconfigure(textFrame, 0, weight=1)
+
+        self.annotationGuideField.grid(row=0, column=1)#, sticky=tk.N+tk.S+tk.E+tk.W, padx=10)
+        self.textField.grid(row=0, column=0)#, sticky=tk.N+tk.S+tk.E+tk.W)
         #self.annotationTextFieldLabel.grid(row=numberOfButtons+2, column=0)
         #self.annotationTextField.grid(row=numberOfButtons+2, column=1, rowspan=numberOfButtons, columnspan=4)
-        self.annotationGuideField.grid(row=2, column=5, rowspan=8)
+
+
+
         self.listOfdictOfDocs = []
         self.workingSentenceIndex = 0
         self.workingDocIndex = 0
@@ -155,6 +198,8 @@ class GUI():
         doc_ID = list(self.listOfdictOfDocs)[self.workingDocIndex]
         if len(fileName) > 20:
             fileName = fileName[:20] + '...'
+
+        #print(f'doc_ID: {doc_ID}')
 
         self.headerLabelDoc_ID['text'] = f'Doc_ID: {doc_ID}'
         self.headerLabelFilename['text'] = f'Filename: {fileName}'
@@ -206,8 +251,18 @@ class GUI():
             regex = re.compile(r"\b{}\b".format(annotatedText), re.I)  # with the ignorecase option
             matchObj = regex.search(sentence)
             (start, end) = matchObj.span()
+
+            label = 'sensitive'
+            try:
+                if self.guide:
+                    label = self.guide[list(self.listOfdictOfDocs)[self.workingDocIndex]]['label']
+            except:
+                pass
+
+            #print(f'label: {label}')
+
             if f'{indexStart},{indexEnd}' not in informationDict['annotations']:
-                informationDict['annotations'][f"{indexStart},{indexEnd}"] = {'label': 'sensitive',
+                informationDict['annotations'][f"{indexStart},{indexEnd}"] = {'label': label,
                                                                               'annotatedString': annotatedText,
                                                                               'user': self.userMenuList.get(),
                                                                               'stringIdx': (start, end)}
@@ -307,14 +362,16 @@ class GUI():
         self.textField.config(state='disabled')
 
 
-        self.annotationTextField.config(state='normal')
-        self.annotationTextField.delete('1.0', tk.END)
+        #self.annotationTextField.config(state='normal')
+        #self.annotationTextField.delete('1.0', tk.END)
+        '''
         for k, v in self.listOfdictOfDocs[self.workingDocKey][self.workingSentenceIndex]['annotations'].items():
             label = v['label']
             annotatedString = v['annotatedString']
             user = v['user']
             self.annotationTextField.insert(tk.INSERT,(f'{label}: "{annotatedString}", User: {user}\n'))
         self.annotationTextField.config(state='disabled')
+        '''
         self.formatHeaderLabels()
         self.displayGuide()
 
