@@ -1,9 +1,10 @@
 import sys
+import argparse
 import GUI
 import decimal
 
-def main():
-    gui = GUI.GUI((1200 ,550), (20, 60))
+def main(size):
+    gui = GUI.GUI(size)#, (20, 60))
     gui.setup()
     #gui.readDocs()
     gui.bindKey('s', gui.annotateButtonAction)
@@ -25,4 +26,12 @@ def main():
     '''
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', nargs=2, help="sets the GUI size to be S1xS2. Measured in pixels")
+    args = parser.parse_args()
+    size = (1200,550)
+    if args.s:
+        size = (int(args.s[0]), int(args.s[1]))
+    #print(size)
+
+    main(size)

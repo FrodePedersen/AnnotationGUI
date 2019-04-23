@@ -47,14 +47,14 @@ import re
 
 class GUI():
 
-    def __init__(self, GUIsize, textFieldSize):
+    def __init__(self, GUIsize): #, textFieldSize):
         #Measured in pixels
         self.GUIheight = GUIsize[0]
         self.GUIwidth = GUIsize[1]
 
         #Measured in chars
-        self.textFieldHeight = textFieldSize[0]
-        self.textFieldWidth = textFieldSize[1]
+        #self.textFieldHeight = textFieldSize[0]
+        #self.textFieldWidth = textFieldSize[1]
 
         self.root = tk.Tk()
         self.root.geometry(f'{self.GUIheight}x{self.GUIwidth}')
