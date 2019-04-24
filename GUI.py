@@ -470,7 +470,8 @@ class GUI():
 
         for dict in self.guideJson:
             self.guide[dict['monsantoId']] = {'label': dict['label'],
-                                             'uriText': dict['text']['val']}
+                                             'textVal': dict['text']['val'],
+                                              'uriText': dict['uriText']}
 
         self.displayGuide()
 
@@ -482,8 +483,10 @@ class GUI():
                 self.annotationGuideField.config(state="normal")
                 self.annotationGuideField.delete('1.0', tk.END)
                 self.annotationGuideField.insert(tk.INSERT, 'Label:\n' + self.guide[currentDoc]['label'])
-                self.annotationGuideField.insert(tk.INSERT, '\n\nGuide Text:\n')
+                self.annotationGuideField.insert(tk.INSERT, '\n\nGuide URI TEXT:\n')
                 self.annotationGuideField.insert(tk.INSERT, self.guide[currentDoc]['uriText'])
+                self.annotationGuideField.insert(tk.INSERT, '\n\nGuide TEXT VALUE:\n')
+                self.annotationGuideField.insert(tk.INSERT, self.guide[currentDoc]['textVal'])
                 self.annotationGuideField.config(state="disabled")
         except:
             self.annotationGuideField.config(state="normal")
