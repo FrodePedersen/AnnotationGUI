@@ -11,40 +11,6 @@ import taboo_core.load_trees as load_trees
 import re
 
 
-####
-# Data structure of the annotations are as follows:
-# {"Doc_ID": [{
-#           "annotations": {
-#                           "stringStartPos,stringEndPos": {
-#                                                                "label": value,
-#                                                                "annotatedString": string value,
-#                                                                "user": string value
-#                                                           }
-#                           },
-#           "sentence": entire sentence string shown in the GUI,
-#           "sentenceIndex": index of the sentence start in the monsanto Doc,
-#           "mon_fileName": filename of the monsanto Doc
-#       }]
-# }
-#
-# with annotations being a dictionary containing possibly multiple annotations per doc, with different labels and users.
-####
-
-####
-# E X A M P L E
-#
-# {"Doc_ID": 23,
-#  "annotations": {
-#                  "1.7,1.18": {
-#                                 "label": "sensitive",
-#                                 "annotatedString": "HIV positive,
-#                                 "user": Bob
-#                               }
-#                 },
-#  "doc_string": "he was HIV positive"
-#
-####
-
 class GUI():
 
     def __init__(self, GUIsize): #, textFieldSize):
@@ -111,6 +77,7 @@ class GUI():
         self.nextButton = tk.Button(buttonFrame, width = buttonWidth, text="Next ( -> )", command=self.nextButtonAction)
         self.prevButton = tk.Button(buttonFrame, width = buttonWidth, text="Prev ( <- )", command=self.prevButtonAction)
         self.guideButton = tk.Button(buttonFrame, width = buttonWidth, text="Labeling Guide", command=self.guideButtonAction)
+        self.jumpButton = tk.Button(buttonFrame, width = buttonWidth, text="Jump Last Anno", command=self.jumpButtonAction)
 
         options = []
         with open('res/Users.txt', 'r') as txt:
@@ -161,7 +128,7 @@ class GUI():
         self.headerLabelGuide.grid(row=1, column=3)
 
         #Button layout
-        numberOfButtons = 8
+        numberOfButtons = 9
         for i in range(numberOfButtons):
             tk.Grid.rowconfigure(buttonFrame, i, weight=1)
             tk.Grid.columnconfigure(buttonFrame,0, weight=1)
@@ -174,6 +141,7 @@ class GUI():
         self.prevButton.grid(row=5, column=0)
         self.menu.grid(row=6, column=0)
         self.guideButton.grid(row=7, column=0)
+        self.jumpButton.grid(row=8, column=0)
 
         #Textframe layouts
         tk.Grid.columnconfigure(textFrame, 0, weight=1)
@@ -193,6 +161,19 @@ class GUI():
         self.workingDocKey = ''
 
     def formatHeaderLabels(self):
+
+        sentencesProcessed = -1
+        for doc, sentences in self.listOfdictOfDocs.items():
+            for i in range(len(sentences)):
+                sentencesProcessed += 1
+                if doc == self.workingDocKey and i == self.workingSentenceIndex:
+                    break
+            else:
+                continue
+
+            break
+
+        self.amountOfSentencesProcessed = sentencesProcessed
 
         fileName = self.listOfdictOfDocs[self.workingDocKey][self.workingSentenceIndex]['mon_fileName']
         doc_ID = list(self.listOfdictOfDocs)[self.workingDocIndex]
@@ -410,8 +391,10 @@ class GUI():
                 self.workingDocIndex += 1
                 self.workingDocKey = list(self.listOfdictOfDocs)[self.workingDocIndex]
 
-        if self.amountOfSentencesProcessed < self.amountOfSentencesInFile-1:
-            self.amountOfSentencesProcessed += 1
+
+
+        #if self.amountOfSentencesProcessed < self.amountOfSentencesInFile-1:
+        #    self.amountOfSentencesProcessed += 1
         self.updateAnnotationField()
         self.redrawAnnotations()
 
@@ -430,6 +413,35 @@ class GUI():
         self.updateAnnotationField()
         self.redrawAnnotations()
 
+    def jumpButtonAction(self, _event=None):
+        lastDocKey = None
+        lastSentenceNumber = None
+        for doc, sentences in self.listOfdictOfDocs.items():
+            for i in range(len(sentences)):
+                s = sentences[i]['annotations']
+                if sentences[i]['annotations'] != {}:
+                    lastDocKey = doc
+                    lastSentenceNumber = i
+
+
+        if lastDocKey != None and lastSentenceNumber != None:
+            self.workingDocKey = lastDocKey
+            self.workingSentenceIndex = lastSentenceNumber
+            for i in range(len(self.listOfdictOfDocs)):
+                self.workingDocIndex = i
+                if list(self.listOfdictOfDocs)[i] == lastDocKey:
+                    break
+                else:
+                    pass
+
+            self.updateAnnotationField()
+            self.redrawAnnotations()
+            #print(f'lastDocKey: {lastDocKey}, lastDocIndex: {self.workingDocIndex}, lastSentenceNumber: {lastSentenceNumber}')
+        else:
+            print(f'No Annotations found in session')
+
+
+
     def bindKey(self, key, func):
         self.root.bind(key, func)
 
@@ -445,7 +457,7 @@ class GUI():
         initialDictOfDocs = {}
 
         for tree in trees:
-            doc_ID = tree.word
+            doc_ID = tree.word.split(" ")[0]
             startCharIndex = tree.syntax
             textNode = tree.left
             mon_fileNameNode = tree.right
