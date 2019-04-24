@@ -466,12 +466,15 @@ class GUI():
         guideJson = []
         self.guide = {}
         with open(fileName, 'r') as file:
-            self.guideJson = json.load(file)
+            guideJson = json.load(file)
 
-        for dict in self.guideJson:
-            self.guide[dict['monsantoId']] = {'label': dict['label'],
-                                             'textVal': dict['text']['val'],
-                                              'uriText': dict['uriText']}
+        for dict in guideJson:
+            listOfIds = [dict['monsantoId'].split(" ")[0]] + [s.split(" ")[0] for s in dict['otherMonsantoIds']]
+            print(f'listOfIds: {listOfIds}')
+            for id in listOfIds:
+                self.guide[id] = {'label': dict['label'],
+                                  'textVal': dict['text']['val'],
+                                   'uriText': dict['uriText']}
 
         self.displayGuide()
 
