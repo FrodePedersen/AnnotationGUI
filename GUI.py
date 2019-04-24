@@ -153,8 +153,7 @@ class GUI():
         #self.annotationTextFieldLabel.grid(row=numberOfButtons+2, column=0)
         #self.annotationTextField.grid(row=numberOfButtons+2, column=1, rowspan=numberOfButtons, columnspan=4)
 
-
-
+        self.labelSemantics = {}
         self.listOfdictOfDocs = []
         self.workingSentenceIndex = 0
         self.workingDocIndex = 0
@@ -482,12 +481,28 @@ class GUI():
 
         for dict in guideJson:
             listOfIds = [dict['monsantoId'].split(" ")[0]] + [s.split(" ")[0] for s in dict['otherMonsantoIds']]
-            print(f'listOfIds: {listOfIds}')
+            #print(f'listOfIds: {listOfIds}')
             for id in listOfIds:
                 self.guide[id] = {'label': dict['label'],
                                   'textVal': dict['text']['val'],
                                    'uriText': dict['uriText']}
 
+        file = tk.filedialog.askopenfile()
+        fileName = file.name
+
+        labelSemantics = {}
+        with open(fileName, 'r') as file:
+            file
+            for line in file.readlines():
+                if line.split(",")[0] == 'GHOST':
+                    labelSemantics['GHOST'] = line
+                elif line.split(",")[0] == 'TOXIC':
+                    labelSemantics['TOXIC'] = line
+                elif line.split(",")[0] == 'CHEMI':
+                    labelSemantics['CHEMI'] = line
+                elif line.split(",")[0] == 'REGUL':
+                    labelSemantics['REGUL'] = line
+        self.labelSemantics = labelSemantics
         self.displayGuide()
 
     def displayGuide(self):
@@ -495,9 +510,24 @@ class GUI():
         try:
             if self.guide != None:
                 currentDoc = self.workingDocKey
+                label = self.guide[currentDoc]['label']
+                labelSemantic = ""
+                if label.split(" ")[0].split(",")[0] == "Regulatory":
+                    labelSemantic = self.labelSemantics['REGUL']
+                elif label.split(" ")[0].split(",")[0] == "Absorption":
+                    labelSemantic = self.labelSemantics['TOXIC']
+                elif label.split(" ")[0].split(",")[0] == "Surfactants":
+                    labelSemantic = self.labelSemantics['CHEMI']
+                elif label.split(" ")[0].split(",")[0] == "Ghostwriting":
+                    labelSemantic = self.labelSemantics['GHOST']
+                else:
+                    raise Exception(f'Invalid Label Semantic')
+
                 self.annotationGuideField.config(state="normal")
                 self.annotationGuideField.delete('1.0', tk.END)
                 self.annotationGuideField.insert(tk.INSERT, 'Label:\n' + self.guide[currentDoc]['label'])
+                self.annotationGuideField.insert(tk.INSERT, '\n\nLABEL SEMANTIC:\n')
+                self.annotationGuideField.insert(tk.INSERT, labelSemantic)
                 self.annotationGuideField.insert(tk.INSERT, '\n\nGuide URI TEXT:\n')
                 self.annotationGuideField.insert(tk.INSERT, self.guide[currentDoc]['uriText'])
                 self.annotationGuideField.insert(tk.INSERT, '\n\nGuide TEXT VALUE:\n')
